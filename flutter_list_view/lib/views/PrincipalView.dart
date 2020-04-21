@@ -1,15 +1,18 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_list_view/models/item.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PrincipalView extends StatefulWidget {
   var items = List<Item>();
 
   PrincipalView() {
     items = [];
-    items.add(Item("BCFF11", false));
-    items.add(Item("HGCR11", true));
-    items.add(Item("RNDP11", false));
-    items.add(Item("XPTO11", false));
+    // items.add(Item("BCFF11", false));
+    // items.add(Item("HGCR11", true));
+    // items.add(Item("RNDP11", false));
+    // items.add(Item("XPTO11", false));
   }
 
   @override
@@ -18,6 +21,10 @@ class PrincipalView extends StatefulWidget {
 
 class _PrincipalViewState extends State<PrincipalView> {
   TextEditingController tarefaController = TextEditingController();
+
+  _PrincipalViewState() {
+    _load();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +58,7 @@ class _PrincipalViewState extends State<PrincipalView> {
               onChanged: (value) {
                 setState(() {
                   item.done = value;
+                  _save();
                 });
               },
             ),
@@ -58,6 +66,7 @@ class _PrincipalViewState extends State<PrincipalView> {
             background: Container(color: Colors.pink.withOpacity(0.2)),
             onDismissed: (direction) {
               print(direction);
+              _remove(index);
             },
           );
         },
@@ -82,5 +91,32 @@ class _PrincipalViewState extends State<PrincipalView> {
       widget.items.add((item));
     });
     tarefaController.clear();
+    _save();
+  }
+
+  void _remove(int index) {
+    setState(() {
+      widget.items.removeAt(index);
+    });
+    _save();
+  }
+
+  Future _load() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    var data = prefs.getString('data');
+
+    if (data != null) {
+      Iterable decoded = jsonDecode(data);
+      List<Item> result = decoded.map((x) => Item.fromJson(x)).toList();
+
+      setState(() {
+        widget.items = result;
+      });
+    }
+  }
+
+  _save() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('data', jsonEncode(widget.items));
   }
 }
